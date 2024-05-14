@@ -35,7 +35,7 @@ P = ParamSpec('P')
 T = TypeVar('T')
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=True, frozen=True)
 class ExecutionInfo:
     """Task execution information."""
 
@@ -62,7 +62,7 @@ class TaskInfo:
     execution: ExecutionInfo | None = None
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=False)
 class _TaskResult(Generic[T]):
     result: T
     info: ExecutionInfo
@@ -233,6 +233,8 @@ class WorkflowExecutor:
         self.shutdown()
 
     def _task_done_callback(self, future: Future[Any]) -> None:
+        if future not in self._running_tasks:
+            return
         task_future = self._running_tasks.pop(future)
         execution_info = future.result().info
         task_future.info.received_time = time.time()
